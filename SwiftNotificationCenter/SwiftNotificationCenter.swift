@@ -25,13 +25,6 @@ public class Broadcaster {
         safeRemove(key: key, object: observer as AnyObject)
     }
     
-    
-    /// Remove all observers which comform to the protocol
-    public static func unregister<T>(_ protocolType: T.Type) {
-        let key = "\(protocolType)"
-        safeRemove(key: key)
-    }
-    
     public static func notify<T>(_ protocolType: T.Type, block: (T) -> Void ) {
         
         let key = "\(protocolType)"
@@ -66,12 +59,6 @@ private extension Broadcaster {
                 set.remove(object)
                 observersDic[key] = set
             }
-        }
-    }
-    
-    static func safeRemove(key: String) {
-        notificationQueue.async(flags: .barrier) {
-            observersDic.removeValue(forKey: key)
         }
     }
     
