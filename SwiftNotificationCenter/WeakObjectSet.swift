@@ -9,20 +9,19 @@
 import Foundation
 
 struct WeakObject<T: AnyObject>: Equatable, Hashable {
-    private let identifier: ObjectIdentifier
     weak var object: T?
     init(_ object: T) {
         self.object = object
-        self.identifier = ObjectIdentifier(object)
     }
     
     var hashValue: Int {
-        return self.identifier.hashValue
+        if let object = self.object { return ObjectIdentifier(object).hashValue }
+        else { return 0 }
     }
-    
-    static func == (lhs: WeakObject<T>, rhs: WeakObject<T>) -> Bool {
-        return lhs.identifier == rhs.identifier
-    }
+}
+
+func == <T> (lhs: WeakObject<T>, rhs: WeakObject<T>) -> Bool {
+    return lhs.object === rhs.object
 }
 
 struct WeakObjectSet<T: AnyObject>: Sequence {
@@ -54,15 +53,11 @@ struct WeakObjectSet<T: AnyObject>: Sequence {
     }
     
     mutating func add(_ object: T) {
-        //prevent ObjectIdentifier be reused
-        if self.contains(object) {
-            self.remove(object)
-        }
-        self.objects.insert(WeakObject(object))
+        self.objects.formUnion([WeakObject(object)])
     }
     
     mutating func add(_ objects: [T]) {
-        objects.forEach { self.add($0) }
+        self.objects.formUnion(objects.map{WeakObject($0)})
     }
     
     mutating func remove(_ object: T) {
@@ -70,7 +65,9 @@ struct WeakObjectSet<T: AnyObject>: Sequence {
     }
     
     mutating func remove(_ objects: [T]) {
-        objects.forEach { self.remove($0) }
+        for object in objects {
+            self.objects.remove(WeakObject<T>(object))
+        }
     }
     
     func makeIterator() -> AnyIterator<T> {
